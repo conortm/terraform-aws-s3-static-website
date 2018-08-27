@@ -39,12 +39,13 @@ module "s3-static-website" {
 
 | Name | Description | Type | Default | Required |
 |------|-------------|:----:|:-------:|:--------:|
-| cert_arn | The ARN of the SSL Certificate to use for this domain | string | - | yes |
-| domain_name | Domain name for the S3 Static Website | string | - | yes |
-| redirects | Optional list of domains that should redirect to `domain_name` (i.e. for redirecting naked domain to www-version) | list | `<list>` | no |
-| secret | Random alphanumeric string for allowing CloudFront Distribution's traffic to S3 | string | - | yes |
-| tags | A mapping of tags to assign to each resource (S3 and CloudFront) | map | `<map>` | no |
-| zone_id | The Route 53 Zone ID in which to create the record set | string | - | yes |
+| cert_arn | ARN of the SSL Certificate to use for the Cloudfront Distribution | string | - | yes |
+| domain_name | Domain name for the website (i.e. `www.example.com`) | string | - | yes |
+| public_dir | Directory in S3 Bucket from which to serve public files | string | `/public` | no |
+| redirects | A list of domains that should redirect to domain_name (i.e. for redirecting naked domain to www-version) | list | `<list>` | no |
+| secret | A secret string between CloudFront and S3 to control access | string | - | yes |
+| tags | A mapping of tags to assign to each resource | map | `<map>` | no |
+| zone_id | ID of the Route 53 Hosted Zone in which to create an alias record set | string | - | yes |
 
 ## Outputs
 

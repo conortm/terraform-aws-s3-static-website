@@ -1,16 +1,21 @@
+variable "cert_arn" {
+  description = "ARN of the SSL Certificate to use for the Cloudfront Distribution"
+  type        = "string"
+}
+
 variable "domain_name" {
   description = "Domain name for the website (i.e. www.example.com)"
   type        = "string"
 }
 
-variable "redirects" {
-  description = "A list of domain names which redirect to domain_name"
-  default     = []
+variable "public_dir" {
+  description = "Directory in S3 Bucket from which to serve public files"
+  default     = "/public"
 }
 
-variable "public_dir" {
-  description = "Directory from which to serve public files (default: /public)"
-  default     = "/public"
+variable "redirects" {
+  description = "A list of domains that should redirect to domain_name (i.e. for redirecting naked domain to www-version)"
+  default     = []
 }
 
 variable "secret" {
@@ -18,17 +23,12 @@ variable "secret" {
   type        = "string"
 }
 
-variable "cert_arn" {
-  description = "ARN of the SSL Certificate to use for the Cloudfront Distribution"
-  type        = "string"
+variable "tags" {
+  description = "A mapping of tags to assign to each resource"
+  default     = {}
 }
 
 variable "zone_id" {
   description = "ID of the Route 53 Hosted Zone in which to create an alias record"
   type        = "string"
-}
-
-variable "tags" {
-  description = "A map of tags to add to all resources"
-  default     = {}
 }
