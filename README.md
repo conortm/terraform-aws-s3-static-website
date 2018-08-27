@@ -1,6 +1,8 @@
 # AWS S3 Static Website Terraform Module
 
-Terraform Module for an Amazon S3 Static Website, fronted by a CloundFront Distribution.
+[Terraform Module](https://registry.terraform.io/modules/conortm/s3-static-website) for an Amazon S3 Static Website, fronted by a CloundFront Distribution.
+
+**Note:** This module "works" but is still in development. See [TODO section](#todo). Also, suggestions welcome!
 
 ## Features
 
@@ -18,8 +20,8 @@ It requires (for now?) that the following have been setup outside this module:
 ## Usage
 
 ```HCL
-module "static_website" {
-  source = "git@github.com:conortm/terraform-aws-s3-static-website.git"
+module "s3-static-website" {
+  source  = "conortm/s3-static-website/aws"
 
   domain_name = "www.my-aws-s3-static-website.com"
   redirects   = ["my-aws-s3-static-website.com"]
