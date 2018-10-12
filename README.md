@@ -41,7 +41,7 @@ module "s3-static-website" {
 |------|-------------|:----:|:-------:|:--------:|
 | cert_arn | ARN of the SSL Certificate to use for the Cloudfront Distribution | string | - | yes |
 | domain_name | Domain name for the website (i.e. `www.example.com`) | string | - | yes |
-| public_dir | Directory in S3 Bucket from which to serve public files | string | `/public` | no |
+| public_dir | Directory in S3 Bucket from which to serve public files (no leading or trailing slashes) | string | `public` | no |
 | redirects | A list of domains that should redirect to domain_name (i.e. for redirecting naked domain to www-version) | list | `<list>` | no |
 | secret | A secret string between CloudFront and S3 to control access | string | - | yes |
 | tags | A mapping of tags to assign to each resource | map | `<map>` | no |
