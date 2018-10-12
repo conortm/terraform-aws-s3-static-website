@@ -1,9 +1,28 @@
+locals {
+  public_dir_with_leading_slash = "${length(var.public_dir) > 0 ? "/${var.public_dir}" : ""}"
+  static_website_routing_rules = <<EOF
+[{
+    "Condition": {
+        "KeyPrefixEquals": "${var.public_dir}/${var.public_dir}/"
+    },
+    "Redirect": {
+        "Protocol": "https",
+        "HostName": "${var.domain_name}",
+        "ReplaceKeyPrefixWith": "",
+        "HttpRedirectCode": "301"
+    }
+}]
+EOF
+}
+
 resource "aws_s3_bucket" "static_website" {
   bucket = "${var.domain_name}"
 
   website {
     index_document = "index.html"
     error_document = "error.html"
+
+    routing_rules = "${length(var.public_dir) > 0 ? local.static_website_routing_rules : ""}"
   }
 
   tags = "${merge(map("Name", "${var.domain_name}-static_website"), var.tags)}"
@@ -13,7 +32,7 @@ data "aws_iam_policy_document" "static_website_read_with_secret" {
   statement {
     sid       = "1"
     actions   = ["s3:GetObject"]
-    resources = ["${aws_s3_bucket.static_website.arn}${var.public_dir}/*"]
+    resources = ["${aws_s3_bucket.static_website.arn}${local.public_dir_with_leading_slash}/*"]
 
     principals {
       type        = "AWS"
@@ -34,13 +53,13 @@ resource "aws_s3_bucket_policy" "static_website_read_with_secret" {
 }
 
 locals {
-  s3_origin_id = "cloudfront-distribution-origin-${var.domain_name}.s3.amazonaws.com${var.public_dir}"
+  s3_origin_id = "cloudfront-distribution-origin-${var.domain_name}.s3.amazonaws.com${local.public_dir_with_leading_slash}"
 }
 
 resource "aws_cloudfront_distribution" "cdn" {
   origin {
     domain_name = "${aws_s3_bucket.static_website.website_endpoint}"
-    origin_path = "${var.public_dir}"
+    origin_path = "${local.public_dir_with_leading_slash}"
     origin_id   = "${local.s3_origin_id}"
 
     custom_origin_config {
