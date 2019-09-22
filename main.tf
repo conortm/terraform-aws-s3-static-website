@@ -1,6 +1,6 @@
 locals {
   public_dir_with_leading_slash = "${length(var.public_dir) > 0 ? "/${var.public_dir}" : ""}"
-  static_website_routing_rules = <<EOF
+  static_website_routing_rules  = <<EOF
 [{
     "Condition": {
         "KeyPrefixEquals": "${var.public_dir}/${var.public_dir}/"
@@ -40,9 +40,9 @@ data "aws_iam_policy_document" "static_website_read_with_secret" {
     }
 
     condition {
-      test = "StringEquals"
+      test     = "StringEquals"
       variable = "aws:UserAgent"
-      values = ["${var.secret}"]
+      values   = [var.secret]
     }
   }
 }
@@ -63,15 +63,15 @@ resource "aws_cloudfront_distribution" "cdn" {
     origin_id   = "${local.s3_origin_id}"
 
     custom_origin_config {
-      http_port               = 80
-      https_port              = 443
-      origin_protocol_policy  = "http-only"
-      origin_ssl_protocols    = ["TLSv1.2", "TLSv1.1", "TLSv1"]
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "http-only"
+      origin_ssl_protocols   = ["TLSv1.2", "TLSv1.1", "TLSv1"]
     }
 
     custom_header {
       name  = "User-Agent"
-      value = "${var.secret}"
+      value = var.secret
     }
   }
 
@@ -82,15 +82,15 @@ resource "aws_cloudfront_distribution" "cdn" {
   aliases             = ["${var.domain_name}"]
 
   custom_error_response {
-    error_code          = 403
-    response_page_path  = "/error.html"
-    response_code       = 404
+    error_code         = 403
+    response_page_path = "/error.html"
+    response_code      = 404
   }
 
   custom_error_response {
-    error_code          = 404
-    response_page_path  = "/error.html"
-    response_code       = 404
+    error_code         = 404
+    response_page_path = "/error.html"
+    response_code      = 404
   }
 
   default_cache_behavior {
@@ -116,62 +116,45 @@ resource "aws_cloudfront_distribution" "cdn" {
   }
 
   viewer_certificate {
-    acm_certificate_arn       = "${var.cert_arn}"
-    ssl_support_method        = "sni-only"
-    minimum_protocol_version  = "TLSv1.1_2016"
+    acm_certificate_arn      = "${var.cert_arn}"
+    ssl_support_method       = "sni-only"
+    minimum_protocol_version = "TLSv1.1_2016"
   }
 
   tags = "${merge(map("Name", "${var.domain_name}-cdn"), var.tags)}"
 }
 
-resource "aws_route53_record" "alias" {
-  count = "${length(var.zone_id) > 0 ? 1 : 0}"
-
-  zone_id = "${var.zone_id}"
-  name    = "${var.domain_name}"
-  type    = "A"
-
-  alias {
-    name                    = "${aws_cloudfront_distribution.cdn.domain_name}"
-    zone_id                 = "${aws_cloudfront_distribution.cdn.hosted_zone_id}"
-    evaluate_target_health  = false
-  }
-}
 
 resource "aws_s3_bucket" "redirect" {
-  count = "${length(var.redirects)}"
-
-  bucket = "${element(var.redirects, count.index)}"
-
+  for_each = var.redirects
+  bucket   = each.value
   website {
     redirect_all_requests_to = "https://${var.domain_name}"
   }
-
-  tags = "${merge(map("Name", "${element(var.redirects, count.index)}-redirect"), var.tags)}"
+  tags = "${merge(map("Name", each.key), var.tags)}"
 }
 
 resource "aws_cloudfront_distribution" "redirect" {
-  count = "${length(var.redirects)}"
-
+  for_each = var.redirects
   origin {
-    domain_name = "${element(aws_s3_bucket.redirect.*.website_endpoint, count.index)}"
-    origin_id   = "cloudfront-distribution-origin-${element(var.redirects, count.index)}.s3.amazonaws.com"
+    domain_name = each.value
+    origin_id   = "cloudfront-distribution-origin-${each.key}.s3.amazonaws.com"
 
     custom_origin_config {
-      http_port               = 80
-      https_port              = 443
-      origin_protocol_policy  = "http-only"
-      origin_ssl_protocols    = ["TLSv1.2", "TLSv1.1", "TLSv1"]
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "http-only"
+      origin_ssl_protocols   = ["TLSv1.2", "TLSv1.1", "TLSv1"]
     }
   }
 
-  comment         = "CDN for ${element(var.redirects, count.index)} S3 Bucket (redirect)"
+  comment         = "CDN for ${each.value} S3 Bucket (redirect)"
   enabled         = true
   is_ipv6_enabled = true
-  aliases         = ["${element(var.redirects, count.index)}"]
+  aliases         = ["${each.value}"]
 
   default_cache_behavior {
-    target_origin_id = "cloudfront-distribution-origin-${element(var.redirects, count.index)}.s3.amazonaws.com"
+    target_origin_id = "cloudfront-distribution-origin-${each.key}.s3.amazonaws.com"
     allowed_methods  = ["GET", "HEAD"]
     cached_methods   = ["GET", "HEAD"]
 
@@ -193,25 +176,40 @@ resource "aws_cloudfront_distribution" "redirect" {
   }
 
   viewer_certificate {
-    acm_certificate_arn       = "${var.cert_arn}"
-    ssl_support_method        = "sni-only"
-    minimum_protocol_version  = "TLSv1.1_2016"
+    acm_certificate_arn      = "${var.cert_arn}"
+    ssl_support_method       = "sni-only"
+    minimum_protocol_version = "TLSv1.1_2016"
   }
 
-  tags = "${merge(map("Name", "${element(var.redirects, count.index)}-cdn_redirect"), var.tags)}"
+  tags = "${merge(map("Name", "${each.key}-cdn_redirect"), var.tags)}"
 }
 
-resource "aws_route53_record" "redirect" {
-  count = "${length(var.zone_id) > 0 ? length(var.redirects) : 0}"
+resource "aws_route53_record" "alias" {
+  #count = "${length(var.zone_id) > 0 ? 1 : 0}"
 
   zone_id = "${var.zone_id}"
-  # Work-around (see: https://github.com/hashicorp/terraform/issues/11210)
-  name    = "${length(var.redirects) > 0 ? element(concat(var.redirects, list("")), count.index): ""}"
+  name    = "${var.domain_name}"
   type    = "A"
 
   alias {
-    name                    = "${element(aws_cloudfront_distribution.redirect.*.domain_name, count.index)}"
-    zone_id                 = "${element(aws_cloudfront_distribution.redirect.*.hosted_zone_id, count.index)}"
-    evaluate_target_health  = false
+    name                   = "${aws_cloudfront_distribution.cdn.domain_name}"
+    zone_id                = "${aws_cloudfront_distribution.cdn.hosted_zone_id}"
+    evaluate_target_health = false
+  }
+}
+
+resource "aws_route53_record" "redirect" {
+  #count = "${length(var.zone_id) > 0 ? length(var.redirects) : 0}"
+
+  for_each = var.redirects
+  zone_id  = "${var.zone_id}"
+  # Work-around (see: https://github.com/hashicorp/terraform/issues/11210)
+  name = each.key
+  type = "A"
+
+  alias {
+    name                   = each.value
+    zone_id                = each.value
+    evaluate_target_health = false
   }
 }

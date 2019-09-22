@@ -24,7 +24,9 @@ module "s3-static-website" {
   source  = "conortm/s3-static-website/aws"
 
   domain_name = "www.my-aws-s3-static-website.com"
-  redirects   = ["my-aws-s3-static-website.com"]
+  redirects   = {
+      "my-static-website" : "my-aws-s3-static-website.com"
+  }
   secret      = "SOME_SECRET_MANAGED_OUTSIDE_OF_VERSION_CONTROL"
   cert_arn    = "ARN_OF_SSL_CERTIFICATE"
   zone_id     = "HOSTED_ZONE_ID"
