@@ -25,7 +25,7 @@ variable "secret" {
 
 variable "tags" {
   description = "A mapping of tags to assign to each resource"
-  type = map(string)
+  type        = map(string)
   default     = {}
 }
 
