@@ -10,7 +10,7 @@ variable "domain_name" {
 
 variable "public_dir" {
   description = "Directory in S3 Bucket from which to serve public files (no leading or trailing slashes)"
-  default     = public
+  default     = "public"
 }
 
 variable "redirects" {
