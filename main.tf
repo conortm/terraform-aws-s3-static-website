@@ -25,7 +25,7 @@ resource "aws_s3_bucket" "static_website" {
     routing_rules = length(var.public_dir) > 0 ? local.static_website_routing_rules : ""
   }
 
-  tags = merge(tomap("Name", "${var.domain_name}-static_website"), var.tags)
+  tags = merge(tomap({ "Name" = "${var.domain_name}-static_website" }), var.tags)
 }
 
 data "aws_iam_policy_document" "static_website_read_with_secret" {
@@ -121,7 +121,7 @@ resource "aws_cloudfront_distribution" "cdn" {
     minimum_protocol_version = "TLSv1.1_2016"
   }
 
-  tags = merge(tomap("Name", "${var.domain_name}-cdn"), var.tags)
+  tags = merge(tomap({ "Name" = "${var.domain_name}-cdn" }), var.tags)
 }
 
 resource "aws_route53_record" "alias" {
@@ -147,7 +147,7 @@ resource "aws_s3_bucket" "redirect" {
     redirect_all_requests_to = "https://${var.domain_name}"
   }
 
-  tags = merge(tomap("Name", "${element(var.redirects, count.index)}-redirect"), var.tags)
+  tags = merge(tomap({ "Name" = "${element(var.redirects, count.index)}-redirect" }), var.tags)
 }
 
 resource "aws_cloudfront_distribution" "redirect" {
@@ -198,7 +198,7 @@ resource "aws_cloudfront_distribution" "redirect" {
     minimum_protocol_version = "TLSv1.1_2016"
   }
 
-  tags = merge(tomap("Name", "${element(var.redirects, count.index)}-cdn_redirect"), var.tags)
+  tags = merge(tomap({ "Name" = "${element(var.redirects, count.index)}-cdn_redirect" }), var.tags)
 }
 
 resource "aws_route53_record" "redirect" {
