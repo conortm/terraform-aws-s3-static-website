@@ -28,9 +28,15 @@ resource "aws_s3_bucket" "static_website" {
   tags = merge(tomap({ "Name" = "${var.domain_name}-static_website" }), var.tags)
 }
 
+resource "aws_s3_bucket_public_access_block" "block_on_policy" {
+  bucket = aws_s3_bucket.static_website.id
+  restrict_public_buckets = true
+}
+
 data "aws_iam_policy_document" "static_website_read_with_secret" {
   statement {
     sid       = "1"
+    effect    = "Deny"
     actions   = ["s3:GetObject"]
     resources = ["${aws_s3_bucket.static_website.arn}${local.public_dir_with_leading_slash}/*"]
 
@@ -40,7 +46,7 @@ data "aws_iam_policy_document" "static_website_read_with_secret" {
     }
 
     condition {
-      test     = "StringEquals"
+      test     = "StringNotLike"
       variable = "aws:UserAgent"
       values   = ["${var.secret}"]
     }
@@ -107,6 +113,19 @@ resource "aws_cloudfront_distribution" "cdn" {
     }
 
     viewer_protocol_policy = "redirect-to-https"
+
+    lambda_function_association {
+      count = var.lambda_origin_request_arn ? 1 : 0
+      event_type = "origin-request"
+      lambda_arn = var.lambda_origin_request_arn
+    }
+
+    lambda_function_association {
+      count = var.lambda_origin_response_arn ? 1 : 0
+      event_type = "origin-response"
+      lambda_arn = var.lambda_origin_response_arn
+    }
+
   }
 
   restrictions {
@@ -118,7 +137,7 @@ resource "aws_cloudfront_distribution" "cdn" {
   viewer_certificate {
     acm_certificate_arn      = var.cert_arn
     ssl_support_method       = "sni-only"
-    minimum_protocol_version = "TLSv1.1_2016"
+    minimum_protocol_version = "TLSv1.2_2021"
   }
 
   tags = merge(tomap({ "Name" = "${var.domain_name}-cdn" }), var.tags)

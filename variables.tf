@@ -32,3 +32,15 @@ variable "zone_id" {
   description = "ID of the Route 53 Hosted Zone in which to create an alias record"
   type        = string
 }
+
+variable "lambda_origin_request_arn" {
+  description = "Lambda edge function arn to bind to origin-request"
+  type        = string 
+  default     = ""
+}
+
+variable "lambda_origin_response_arn" {
+  description = "Lambda edge function arn to bind to origin-response"
+  type        = string 
+  default     = ""
+}
