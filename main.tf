@@ -114,16 +114,20 @@ resource "aws_cloudfront_distribution" "cdn" {
 
     viewer_protocol_policy = "redirect-to-https"
 
-    lambda_function_association {
-      count = var.lambda_origin_request_arn ? 1 : 0
-      event_type = "origin-request"
-      lambda_arn = var.lambda_origin_request_arn
+    dynamic "lambda_function_association" {
+      for_each = var.lambda_origin_request_arn ? [{}] : []
+      content {
+        event_type = "origin-request"
+        lambda_arn = var.lambda_origin_request_arn
+      }
     }
 
-    lambda_function_association {
-      count = var.lambda_origin_response_arn ? 1 : 0
-      event_type = "origin-response"
-      lambda_arn = var.lambda_origin_response_arn
+    dynamic "lambda_function_association" {
+      for_each = var.lambda_origin_response_arn ? [{}] : []
+      content {
+        event_type = "origin-response"
+        lambda_arn = var.lambda_origin_response_arn
+      }
     }
 
   }
